@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PolygonModel;
 use Illuminate\Http\Request;
+
 
 class PolygonsController extends Controller
 {
+    public function __construct()
+    {
+        $this->polygons = new PolygonModel();
+
+    }
     /**
      * Display a listing of the resource.
      */
@@ -27,7 +34,34 @@ class PolygonsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validasi request
+        $request->validate(
+            [
+                'name' => 'required|unique:polygons,name',
+                'description' => 'required',
+                'geom_polygon' => 'required',
+            ],
+            [
+                'name.required' => 'Name is required',
+                'name.unique' => 'Name already exists',
+                'description.required' => 'Description is required',
+                'geom_polygon.required' => 'Geometry polygons is required',
+            ]
+        );
+
+        $data = [
+            'geom' => $request->geom_polygon,
+            'name' => $request->name,
+            'description' => $request->description,
+        ];
+
+        // Buat data di database
+        if (!$this->polygons->create($data)) {
+            return redirect()->route('map')->with('error', 'Polygon could not be added');
+        }
+
+        // Redirect ke halaman peta dengan pesan sukses
+        return redirect()->route('map')->with('success', 'Polygon has been added');
     }
 
     /**
