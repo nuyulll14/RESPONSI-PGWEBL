@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\PointsModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class PointsController extends Controller
 {
+
+    protected $points;
+
     public function __construct()
     {
         $this->points = new PointsModel();
@@ -51,6 +55,22 @@ class PointsController extends Controller
             'geom_point.required' => 'Geometry point is required',
         ]);
 
+        // Buat direktori penyimpanan jika belum ada
+        $imageDirectory = public_path('storage/images');
+        if (!File::exists($imageDirectory)) {
+            File::makeDirectory($imageDirectory, 0777, true);
+        }
+
+        // Proses file gambar jika tersedia
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
+            $image->move($imageDirectory, $name_image);
+        } else {
+            $name_image = null;
+        }
+
+
         $data = [
             'geom' => $request->geom_point,
             'name' =>$request->name,
@@ -82,7 +102,12 @@ class PointsController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $data =[
+            'title' => 'Edit Point',
+            'id' => $id
+        ];
+
+        return view('edit-point', $data);
     }
 
     /**
@@ -98,6 +123,18 @@ class PointsController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $image = $this->points->find($id)->image;
+        if (!$this->points->destroy($id)) {
+            return redirect()->route('map')->with('error', 'Point failed to deleted!');
+        }
+        if ($image != null) {
+            if (file_exists('./storage/images/' . $image)) {
+                unlink('./storage/images/' . $image);
+            }
+            return redirect()->route('map')->with('success', 'Point has been delete!');
+        }
+        else {
+            return redirect()->route('map')->with('success', 'Point has been delete!');
+        }
     }
 }

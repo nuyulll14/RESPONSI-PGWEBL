@@ -42,6 +42,25 @@ class PolygonModel extends Model
 
                 array_push($geojson['features'], $feature);
             }
-            return $geojson;
+            return[
+                'type' => 'FeatureCollection',
+            'features' => collect($polygons)->map(function ($polygon) {
+                return [
+                    'type' => 'Feature',
+                    'geometry' => json_decode($polygon->geom),
+                    'properties' => [
+                        'name' => $polygon->name,
+                        'description' => $polygon->description,
+                        'image' => $polygon->image,
+                        'area_m2' => $polygon->area_m2,
+                        'area_ha' => $polygon->area_ha, // Konversi ke hektar
+                        'created_at' => $polygon->created_at,
+                        'updated_at' => $polygon->updated_at
+                    ],
+                ];
+            })->toArray(),
+        ];
+
+
         }
 }

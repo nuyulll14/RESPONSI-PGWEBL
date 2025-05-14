@@ -9,7 +9,11 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('/points', [ApiController::class, 'points'])->name('api.points');
+Route::get('/point/{id}', [ApiController::class, 'point'])->name('api.point');
 Route::get('/polylines', [ApiController::class, 'polylines'])->name('api.polylines');
 Route::get('/polygons', [ApiController::class, 'polygons'])->name('api.polygons');
+Route::get('/polygon/{id}', [ApiController::class, 'polygons'])->name('api.polygon');
+
+
 
 

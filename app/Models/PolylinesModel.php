@@ -10,6 +10,7 @@ class PolylinesModel extends Model
     protected $table = 'polylines';
 
     protected $guarded = ['id'];
+    public $timestamps = true;
 
     public function geojson_polylines()
     {
@@ -20,28 +21,31 @@ class PolylinesModel extends Model
             created_at, updated_at')
             ->get();
 
-        $geojson = [
-            'type' => 'FeatureCollection',
-            'features' => [],
-        ];
 
-        foreach ($polylines as $p) {
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => json_decode($p->geom),
-                'properties' => [
-                    'name' => $p->name,
-                    'description' => $p->description,
-                    'length_m' => $p->length_m,
-                    'length_km' => $p->length_km,
-                    'created_at' => $p->created_at,
-                    'updated_at' => $p->updated_at
-                ],
+            return [
+                'type' => 'FeatureCollection',
+                'features' => collect($polylines)->map(function ($polyline) {
+                    return [
+                        'type' => 'Feature',
+                        'geometry' => json_decode($polyline->geom),
+                        'properties' => [
+                            'name' => $polyline->name,
+                            'description' => $polyline->description,
+                            'image' => $polyline->image,
+                            'length_km' => round((float) $polyline->length_km, 2),
+                            'length_km' => (float) $polyline->length_km,
+                            'created_at' => $polyline->created_at,
+                            'updated_at' => $polyline->updated_at
+                        ],
+                    ];
+                })->toArray(),
             ];
-
-            array_push($geojson['features'], $feature);
         }
 
-        return $geojson;
-    }
+        protected $fillable = [
+            'geom',
+            'name',
+            'description',
+            'image',
+        ];
 }

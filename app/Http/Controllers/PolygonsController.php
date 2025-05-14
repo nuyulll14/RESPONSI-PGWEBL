@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\PolygonModel;
+use App\Http\Controllers\PolygonController;
+use App\Http\Controllers\PolygonsController;
 use Illuminate\Http\Request;
 
 
@@ -55,6 +57,32 @@ class PolygonsController extends Controller
             'description' => $request->description,
         ];
 
+        //CREATE  IMAGE DIRECTOR IF NOT EXIST -PGWEBL 7
+        if (!is_dir('storage/images')) {
+            mkdir('./storage/images', 0777);
+        }
+
+        //GET IMAGE FILE - PGWEBL 7
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_polygons." . strtolower($image->getClientOriginalExtension());
+            $image->move('storage/images', $name_image);
+            //$image->storeAs('public/images', $name_image);
+
+        } else {
+            $name_image = null;
+        }
+
+
+
+        // Simpan data
+        $data = [
+            'geom' => $request->geom_polygon, // Perbaikan dari geom_point ke geom_polyline
+            'name' => $request->name,
+            'description' => $request->description,
+            'image' => $name_image,
+        ];
+
         // Buat data di database
         if (!$this->polygons->create($data)) {
             return redirect()->route('map')->with('error', 'Polygon could not be added');
@@ -77,7 +105,12 @@ class PolygonsController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $data = [
+            'title' => 'Edit Polygon',
+            'id' => $id,
+        ];
+
+        return view('edit_polygon', $data);
     }
 
     /**
@@ -93,6 +126,18 @@ class PolygonsController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $image = $this->polygons->find($id)->image;
+        if (!$this->polygons->destroy($id)) {
+            return redirect()->route('map')->with('error', 'Polygon failed to deleted!');
+        }
+        if ($image != null) {
+            if (file_exists('./storage/images/' . $image)) {
+                unlink('./storage/images/' . $image);
+            }
+            return redirect()->route('map')->with('success', 'Polygon has been delete!');
+        }
+        else {
+            return redirect()->route('map')->with('success', 'Polygon has been delete!');
+        }
     }
 }
