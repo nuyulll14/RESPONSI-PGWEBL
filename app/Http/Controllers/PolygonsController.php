@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PolygonModel;
-use App\Http\Controllers\PolygonController;
-use App\Http\Controllers\PolygonsController;
+use App\Models\PolygonsModel;
 use Illuminate\Http\Request;
-
 
 class PolygonsController extends Controller
 {
     public function __construct()
     {
-        $this->polygons = new PolygonModel();
+        $this->polygons = new PolygonsModel();
 
     }
     /**
@@ -67,7 +64,6 @@ class PolygonsController extends Controller
             $image = $request->file('image');
             $name_image = time() . "_polygons." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
-            //$image->storeAs('public/images', $name_image);
 
         } else {
             $name_image = null;
@@ -110,7 +106,7 @@ class PolygonsController extends Controller
             'id' => $id,
         ];
 
-        return view('edit_polygon', $data);
+        return view('edit-polygon', $data);
     }
 
     /**
@@ -134,10 +130,7 @@ class PolygonsController extends Controller
             if (file_exists('./storage/images/' . $image)) {
                 unlink('./storage/images/' . $image);
             }
-            return redirect()->route('map')->with('success', 'Polygon has been delete!');
         }
-        else {
-            return redirect()->route('map')->with('success', 'Polygon has been delete!');
-        }
+        return redirect()->route('map')->with('success', 'Polygon has been delete!');
     }
 }

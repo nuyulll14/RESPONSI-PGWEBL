@@ -49,8 +49,8 @@ class PolylinesController extends Controller
             ]
         );
 
-         //CREATE  IMAGE DIRECTOR IF NOT EXIST -PGWEBL 7
-         if (!is_dir('storage/images')) {
+        //CREATE  IMAGE DIRECTOR IF NOT EXIST -PGWEBL 7
+        if (!is_dir('storage/images')) {
             mkdir('./storage/images', 0777);
         }
 
@@ -59,8 +59,6 @@ class PolylinesController extends Controller
             $image = $request->file('image');
             $name_image = time() . "_polyline." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
-            //$image->storeAs('public/images', $name_image);
-
         } else {
             $name_image = null;
         }
@@ -100,7 +98,7 @@ class PolylinesController extends Controller
             'id' => $id,
         ];
 
-        return view('edit_polyline', $data);
+        return view('edit-polyline', $data);
     }
 
     /**
@@ -124,12 +122,7 @@ class PolylinesController extends Controller
             if (file_exists('./storage/images/' . $image)) {
                 unlink('./storage/images/' . $image);
             }
-            return redirect()->route('map')->with('success', 'Polyline has been delete!');
         }
-        else {
-            return redirect()->route('map')->with('success', 'Polyline has been delete!');
-        }
-
+        return redirect()->route('map')->with('success', 'Polyline has been delete!');
     }
-    
-    }
+}

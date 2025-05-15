@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PointsModel;
-use App\Models\PolygonModel;
+use App\Models\PolygonsModel;
 use App\Models\PolylinesModel;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class ApiController extends Controller
     {
         $this->points = new PointsModel();
         $this->polylines = new PolylinesModel();
-        $this->polygons = new PolygonModel();
+        $this->polygons = new PolygonsModel();
     }
 
     public function points()

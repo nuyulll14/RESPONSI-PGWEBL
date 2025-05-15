@@ -53,14 +53,14 @@
                                 width="400">
                         </div>
 
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Save changes</button>
-            </div>
-            </form>
         </div>
-    </div>
     </div>
     <!-- Modal Create Polyline -->
     <div class="modal fade" id="createpolylineModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -171,8 +171,6 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-
-
         /* Digitize Function */
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
@@ -190,7 +188,6 @@
             edit: false
         });
         map.addControl(drawControl);
-
 
         map.on('draw:created', function(e) {
             var type = e.layerType,
@@ -210,7 +207,6 @@
                 //MEMUNCULKAN MODAL POLYLINE
                 $('#createpolylineModal').modal('show');
 
-
             } else if (type === 'polygon' || type === 'rectangle') {
                 console.log("Create " + type);
                 $('#geom_polygon').val(objectGeometry);
@@ -229,9 +225,7 @@
             }
             drawnItems.addLayer(layer);
         });
-    </script>
 
-    <script>
         //GeoJSON Points
         var point = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
@@ -240,7 +234,7 @@
                 routedelete = routedelete.replace(':id', feature.properties.id);
 
                 var routeedit = "{{ route('points.destroy', ':id') }}";
-                routeedit= routeedit.replace(':id', feature.properties.id);
+                routeedit = routeedit.replace(':id', feature.properties.id);
 
                 var popupContent = "Nama: " + feature.properties.name + "<br>" +
                     "Deskripsi: " + feature.properties.description + "<br>" +
@@ -249,7 +243,8 @@
                     "' width='200' alt=''>" + "<br>" +
                     "<div class='row mt-4'>" +
                     "<div class='col-6'>" +
-                    "<a href='"+ routeedit +"' class='btn btn-warning btn-sm'><i class='fa-solid fa-pen-to-square'></i></a>" +
+                    "<a href='" + routeedit +
+                    "' class='btn btn-warning btn-sm'><i class='fa-solid fa-pen-to-square'></i></a>" +
                     "</div>" +
 
                     "<div class='col-6'>" +

@@ -10,42 +10,45 @@ class PolylinesModel extends Model
     protected $table = 'polylines';
 
     protected $guarded = ['id'];
-    public $timestamps = true;
+
+    protected $fillable = [
+        'geom',
+        'name',
+        'description',
+        'image',
+    ];
 
     public function geojson_polylines()
     {
         $polylines = DB::table($this->table)
-            ->selectRaw('id, ST_AsGeoJSON(geom) as geom, name, description,
+            ->selectRaw('id, ST_AsGeoJSON(geom) as geom, name, description, image,
             ST_Length(geography(geom)) as length_m,
             ST_Length(geography(geom)) / 1000 as length_km,
             created_at, updated_at')
             ->get();
 
+        $geojson = [
+            'type' => 'FeatureCollection',
+            'features' => [],
+        ];
 
-            return [
-                'type' => 'FeatureCollection',
-                'features' => collect($polylines)->map(function ($polyline) {
-                    return [
-                        'type' => 'Feature',
-                        'geometry' => json_decode($polyline->geom),
-                        'properties' => [
-                            'name' => $polyline->name,
-                            'description' => $polyline->description,
-                            'image' => $polyline->image,
-                            'length_km' => round((float) $polyline->length_km, 2),
-                            'length_km' => (float) $polyline->length_km,
-                            'created_at' => $polyline->created_at,
-                            'updated_at' => $polyline->updated_at
+        foreach ($polylines as $p) {
+            $feature = [
+                'type' => 'Feature',
+                'geometry' => json_decode($p->geom),
+                'properties' => [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'description' => $p->description,
+                            'image' => $p->image,
+                            'length_km' => round((float) $p->length_km, 2),
+                            'length_km' => (float) $p->length_km,
+                            'created_at' => $p->created_at,
+                            'updated_at' => $p->updated_at
                         ],
                     ];
-                })->toArray(),
-            ];
+                    array_push($geojson['features'], $feature);
         }
-
-        protected $fillable = [
-            'geom',
-            'name',
-            'description',
-            'image',
-        ];
+        return $geojson;
+    }
 }
