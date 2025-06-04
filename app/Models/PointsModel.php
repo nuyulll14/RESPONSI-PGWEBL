@@ -16,17 +16,27 @@ class PointsModel extends Model
         'name',
         'description',
         'image',
+        'user_id',
     ];
 
     public function geojson_points()
     {
         $points = $this
-            ->select(DB::raw('id, ST_AsGeoJSON(geom) as geom, name, description, image, created_at, updated_at'))
-            ->get();
+        ->select(DB::raw('points.id,
+        ST_AsGeoJSON(points.geom) as geom,
+        points.name,
+        points.description,
+        points.image,
+        points.created_at,
+        points.updated_at,
+        points.user_id,
+        users.name as user_created'))
+        ->leftJoin('users', 'points.user_id', '=', 'users.id')
+        ->get();
 
-        $geojson = [
-            'type' => 'FeatureCollection',
-            'features' => [],
+    $geojson = [
+        'type' => 'FeatureCollection',
+        'features' => [],
         ];
 
         foreach ($points as $p) {
@@ -39,7 +49,9 @@ class PointsModel extends Model
                     'description' => $p->description,
                     'created_at' => $p->created_at,
                     'updated_at' => $p->updated_at,
-                    'image' => $p->image
+                    'image' => $p->image,
+                    'user_id' => $p->user_id,
+                    'user_created' => $p->user_created,
                 ],
             ];
             array_push($geojson['features'], $feature);
@@ -50,7 +62,7 @@ class PointsModel extends Model
     public function geojson_point($id)
     {
         $points = $this
-            ->select(DB::raw('id, ST_AsGeoJSON(geom) as geom, name, description, created_at, updated_at'))
+            ->select(DB::raw('id, st_asgeojson(geom) as geom, name, description, image, created_at, updated_at'))
             ->where('id', $id)
             ->get();
 
@@ -69,7 +81,7 @@ class PointsModel extends Model
                     'description' => $p->description,
                     'created_at' => $p->created_at,
                     'updated_at' => $p->updated_at,
-                    'image' => $point->image
+                    'image' => $p->image
                 ],
             ];
             array_push($geojson['features'], $feature);

@@ -20,13 +20,14 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Create Point</h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Point</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form method="POST" action="{{ route('points.store') }}">
-                    < class="modal-body">
+                <form method="POST" action="{{ route('points.update', $id) }}" enctype="multipart/form-data">
+                    <div class="modal-body">
                         @csrf
+                        @method('PATCH')
 
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
@@ -44,56 +45,56 @@
                             <textarea class="form-control" id="geom_point" name="geom_point" rows="3"></textarea>
                         </div>
 
-
                         <div class="mb-3">
                             <label for="image" class="form-label">Photo</label>
                             <input type="file" class="form-control" id="image_point" name="image"
                                 onchange="document.getElementById('preview-image-point').src = window.URL.createObjectURL(this.files[0])">
                             <img src="" alt="" id="preview-image-point" class="img-thumbnail"
-                                width="400">
+                                width="500">
                         </div>
 
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Save changes</button>
-            </div>
-            </form>
         </div>
-    </div>
     </div>
 @endsection
 
 @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
     <script src="https://unpkg.com/@terraformer/wkt"></script>
 
     <script>
-        var map = L.map('map').setView([-2.577130644086869, 140.51686145200668], 13);
+        var map = L.map('map').setView([-2.5650107, 140.5072403], 13);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
 
-
-        /* Digitize Function */
+        /* Digitize Function ==== ACARA 4 PGWL*/
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
         var drawControl = new L.Control.Draw({
-            draw: false
+            draw: false,
             edit: {
                 featureGroup: drawnItems,
                 edit: true,
                 remove: false
             }
         });
-
         map.addControl(drawControl);
 
 
@@ -117,20 +118,18 @@
                 $('#name').val(properties.name);
                 $('#description').val(properties.description);
                 $('#geom_point').val(objectGeometry);
-                $('#preview-image-point').attr('src', "{{asset('storage/images')}}/"+properties.image);
-                // menampilkan modal edit
-                $('#editpointModal').modal('show');
+                $('#preview-image-point').attr('src', "{{ asset('storage/images') }}/" + properties.image);
 
+                //menampilkan modal edit
+                $('#editpointModal').modal('show');
             });
         });
-    </script>
 
-    <script>
-        //GeoJSON Points
+        // GeoJSON Points -- PGWEBL ACARA 6
         var point = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
 
-                //memasukan layer point ke dalam drawnItems
+                //memasukkan layer point ke dalam drawnItems
                 drawnItems.addLayer(layer);
 
                 var properties = feature.properties;
@@ -139,26 +138,24 @@
                 layer.on({
                     click: function(e) {
                         //menampilkan data ke dalam modal
-                $('#name').val(properties.name);
-                $('#description').val(properties.description);
-                $('#geom_point').val(objectGeometry);
-                $('#preview-image-point').attr('src', "{{asset('storage/images')}}/"+properties.image);
-                // menampilkan modal edit
-                $('#editpointModal').modal('show');
-                    },
-                    mouseover: function(e) {
+                        $('#name').val(properties.name);
+                        $('#description').val(properties.description);
+                        $('#geom_point').val(objectGeometry);
+                        $('#preview-image-point').attr('src', "{{ asset('storage/images') }}/" +
+                            properties.image);
 
+                        //menampilkan modal edit
+                        $('#editpointModal').modal('show');
                     },
                 });
             },
         });
-        $.getJSON("{{ route('api.points', $id) }}", function(data) {
+        $.getJSON("{{ route('api.point', $id) }}", function(data) {
             point.addData(data);
             map.addLayer(point);
             map.fitBounds(point.getBounds(), {
-                padding: [100,100]
+                padding: [200, 200]
             });
         });
-
     </script>
 @endsection

@@ -20,11 +20,13 @@ class PointsController extends Controller
      */
     public function index()
     {
+        $points = $this->points->all(); // Ambil semua data dari model PointsModel
+
         $data = [
-            'title' => 'Map',
+            'title' => 'Map'
         ];
 
-        return view('map', $data);
+        return view('map', $data); // Tampilkan view table.blade.php
     }
 
     /**
@@ -62,21 +64,25 @@ class PointsController extends Controller
             mkdir('./storage/images', 0777);
         }
 
-        // Proses file gambar jika tersedia
+        //Get old image file name
+
+
+
+        // Get image file
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
         } else {
-            $name_image = null;
+            $name_image =null;
         }
-
 
         $data = [
             'geom' => $request->geom_point,
             'name' => $request->name,
             'description' => $request->description,
             'image' => $name_image,
+            'user_id' =>auth()->user()->id,
         ];
 
 
@@ -115,7 +121,71 @@ class PointsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // dd($id, $request-> all());
+        // validation request
+        $request->validate(
+            [
+                'name' => 'required|unique:points,name' . $id,
+                'description' => 'required',
+                'geom_point' => 'required',
+                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:4048',
+            ],
+            [
+                'name.required' => 'Name is required',
+                'name.unique' => 'Name already exists',
+
+                'descriptions.required' => 'Descriptions is required',
+                'geom_point.required' => 'Geometry point is required',
+            ]
+        );
+
+        // Create image directory if not exists
+        if (!is_dir('storage/images')) {
+            mkdir('./storage/images', 0777);
+        }
+        $old_image = $this->points->find($id)->image;
+
+        // Get image file
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
+            $image->move('storage/images', $name_image);
+
+            // Delete old image file if exists
+            if ($old_image != null) {
+                if (file_exists('storage/images/' . $old_image)) {
+                    unlink('storage/images/' . $old_image);
+                }
+            }
+        } else {
+            $name_image = $old_image;
+        }
+
+        // Proses file gambar jika tersedia
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
+            $image->move('storage/images', $name_image);
+        } else {
+            $name_image = null;
+        }
+
+
+        $data = [
+            'geom' => $request->geom_point,
+            'name' => $request->name,
+            'description' => $request->description,
+            'image' => $name_image,
+        ];
+
+
+        //Create data
+        if (!$this->points->find($id)->update($data)) {
+            return redirect()->route('map')->with('error', 'point failed to update');
+        }
+
+        //Redirect to map
+        return redirect()->route('map')->with('success', 'point has been update');
     }
 
     /**
@@ -124,9 +194,12 @@ class PointsController extends Controller
     public function destroy(string $id)
     {
         $image = $this->points->find($id)->image;
+
         if (!$this->points->destroy($id)) {
             return redirect()->route('map')->with('error', 'Point failed to deleted!');
         }
+
+        // Delete image file
         if ($image != null) {
             if (file_exists('./storage/images/' . $image)) {
                 unlink('./storage/images/' . $image);
@@ -135,3 +208,4 @@ class PointsController extends Controller
         return redirect()->route('map')->with('success', 'Point has been delete!');
     }
 }
+

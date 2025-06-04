@@ -44,16 +44,16 @@
                             <textarea class="form-control" id="geom_point" name="geom_point" rows="3"></textarea>
                         </div>
 
-
                         <div class="mb-3">
                             <label for="image" class="form-label">Photo</label>
                             <input type="file" class="form-control" id="image_point" name="image"
                                 onchange="document.getElementById('preview-image-point').src = window.URL.createObjectURL(this.files[0])">
                             <img src="" alt="" id="preview-image-point" class="img-thumbnail"
-                                width="400">
+                                width="500">
                         </div>
 
                     </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save changes</button>
@@ -71,7 +71,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form method="POST" action="{{ route('polylines.store') }}">
+                <form method="POST" action="{{ route('polylines.store') }}" enctype="multipart/form-data">
                     <div class="modal-body">
                         @csrf
 
@@ -90,14 +90,14 @@
                             <label for="geom_polyline" class="form-label">Geometry</label>
                             <textarea class="form-control" id="geom_polyline" name="geom_polyline" rows="3"></textarea>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="image" class="form-label">Photo</label>
-                        <input type="file" class="form-control" id="image_polyline" name="image"
-                            onchange="document.getElementById('preview-image-polyline').src = window.URL.createObjectURL(this.files[0])">
-                        <img src="" alt="" id="preview-image-polyline" class="img-thumbnail"
-                            width="400">
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Photo</label>
+                            <input type="file" class="form-control" id="image_polyline" name="image"
+                                onchange="document.getElementById('preview-image-polyline').src = window.URL.createObjectURL(this.files[0])">
+                            <img src="" alt="" id="preview-image-polyline" class="img-thumbnail"
+                                width="500">
+                        </div>
                     </div>
 
                     <div class="modal-footer">
@@ -118,7 +118,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form method="POST" action="{{ route('polygons.store') }}">
+                <form method="POST" action="{{ route('polygons.store') }}" enctype="multipart/form-data">
                     <div class="modal-body">
                         @csrf
 
@@ -137,19 +137,20 @@
                             <label for="geom_polygon" class="form-label">Geometry</label>
                             <textarea class="form-control" id="geom_polygon" name="geom_polygon" rows="3"></textarea>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Photo</label>
+                            <input type="file" class="form-control" id="image_polygon" name="image"
+                                onchange="document.getElementById('preview-image-polygon').src = window.URL.createObjectURL(this.files[0])">
+                            <img src="" alt="" id="preview-image-polygon" class="img-thumbnail"
+                                width="500">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="image" class="form-label">Photo</label>
-                        <input type="file" class="form-control" id="image_polygon" name="image"
-                            onchange="document.getElementById('preview-image-polygon').src = window.URL.createObjectURL(this.files[0])">
-                        <img src="" alt="" id="preview-image-polygon" class="img-thumbnail"
-                            width="400">
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Save changes</button>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -157,21 +158,26 @@
 @endsection
 
 @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
     <script src="https://unpkg.com/@terraformer/wkt"></script>
 
     <script>
-        var map = L.map('map').setView([-2.577130644086869, 140.51686145200668], 13);
+        var map = L.map('map').setView([-2.5650107, 140.5072403], 13);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        /* Digitize Function */
+
+
+
+        /* Digitize Function ==== ACARA 4 PGWL*/
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -188,6 +194,7 @@
             edit: false
         });
         map.addControl(drawControl);
+
 
         map.on('draw:created', function(e) {
             var type = e.layerType,
@@ -206,6 +213,7 @@
                 $('#geom_polyline').val(objectGeometry);
                 //MEMUNCULKAN MODAL POLYLINE
                 $('#createpolylineModal').modal('show');
+
 
             } else if (type === 'polygon' || type === 'rectangle') {
                 console.log("Create " + type);
@@ -226,35 +234,38 @@
             drawnItems.addLayer(layer);
         });
 
-        //GeoJSON Points
+        // GeoJSON Points -- PGWEBL ACARA 6
         var point = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
 
                 var routedelete = "{{ route('points.destroy', ':id') }}";
                 routedelete = routedelete.replace(':id', feature.properties.id);
 
-                var routeedit = "{{ route('points.destroy', ':id') }}";
+                var routeedit = "{{ route('points.edit', ':id') }}";
                 routeedit = routeedit.replace(':id', feature.properties.id);
 
-                var popupContent = "Nama: " + feature.properties.name + "<br>" +
+                var popupContent =
+                    "Nama: " + feature.properties.name + "<br>" +
                     "Deskripsi: " + feature.properties.description + "<br>" +
                     "Dibuat: " + feature.properties.created_at + "<br>" +
                     "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
-                    "' width='200' alt=''>" + "<br>" +
+                    "' width='300px' alt=''>" + "<br>" +
+
                     "<div class='row mt-4'>" +
+
                     "<div class='col-6'>" +
                     "<a href='" + routeedit +
-                    "' class='btn btn-warning btn-sm'><i class='fa-solid fa-pen-to-square'></i></a>" +
+                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
                     "</div>" +
 
-                    "<div class='col-6'>" +
+                    "<div class='col-6 text-end'>" +
                     "<form method='POST' action='" + routedelete + "'>" +
                     '@csrf' + '@method('DELETE')' +
-                    "<button type='submit' class='btn btn-danger btn-sm' onclick='return confirm(Yakin akan dihapus?)' ><i class='fa-solid fa-trash-can'></i></button>" +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
                     "</form>" +
                     "</div>" +
-                    "</div>";
-
+                    "</div>" + "<br>" +
+                    "<p>Dibuat: " + feature.properties.user_created + "</p>";
 
                 layer.on({
                     click: function(e) {
@@ -271,12 +282,38 @@
             map.addLayer(point);
         });
 
-        //GeoJSON Polylines
+        // GeoJSON Polylines -- PGWEBL ACARA 6
         var polyline = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
+
+                var routedelete = "{{ route('polylines.destroy', ':id') }}";
+                routedelete = routedelete.replace(':id', feature.properties.id);
+
+                var routeedit = "{{ route('polylines.edit', ':id') }}";
+                routeedit = routeedit.replace(':id', feature.properties.id);
+
                 var popupContent = "Nama: " + feature.properties.name + "<br>" +
-                    "Panjang: " + feature.properties.length_km.toFixed(2) + "km<br>" +
-                    "Dibuat: " + feature.properties.created_at;
+                    "Deskripsi: " + feature.properties.description + "<br>" +
+                    "Panjang: " + feature.properties.length_km.toFixed(2) + "km" + "<br>" +
+                    "Dibuat: " + feature.properties.created_at + "<br>" +
+                    "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
+                    "' width='300px' alt=''>" + "<br>" +
+
+                    "<div class='row mt-4'>" +
+
+                    "<div class='col-6'>" +
+                    "<a href='" + routeedit +
+                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
+                    "</div>" +
+
+                    "<div class='col-6 text-end'>" +
+                    "<form method='POST' action='" + routedelete + "'>" +
+                    '@csrf' + '@method('DELETE')' +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
+                    "</form>" +
+                    "</div>" +
+                    "</div>" + "<br>" +
+                    "<p>Dibuat: " + feature.properties.user_created + "</p>";
 
                 layer.on({
                     click: function(e) {
@@ -293,13 +330,40 @@
             map.addLayer(polyline);
         });
 
-        //GeoJSON Polygon
+        // GeoJSON Polygons -- PGWEBL ACARA 6
         var polygon = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
+
+                var routedelete = "{{ route('polygons.destroy', ':id') }}";
+                routedelete = routedelete.replace(':id', feature.properties.id);
+
+                var routeedit = "{{ route('polygons.edit', ':id') }}";
+                routeedit = routeedit.replace(':id', feature.properties.id);
+
                 var popupContent = "Nama: " + feature.properties.name + "<br>" +
                     "Deskripsi: " + feature.properties.description + "<br>" +
-                    "Luas: " + feature.properties.luas_hektar.toFixed(2) + " hektar" + "<br>" +
-                    "Dibuat: " + feature.properties.created_at;
+                    "Luas: " + feature.properties.area_hektar.toFixed(2) + "Ha" + "<br>" +
+                    "Dibuat: " + feature.properties.created_at + "<br>" +
+                    "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
+                    "' width='300px' alt=''>" + "<br>" +
+
+                    "<div class='row mt-4'>" +
+
+                    "<div class='col-6'>" +
+                    "<a href='" + routeedit +
+                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
+                    "</div>" +
+
+                    "<div class='col-6 text-end'>" +
+                    "<form method='POST' action='" + routedelete + "'>" +
+                    '@csrf' + '@method('DELETE')' +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
+                    "</form>" +
+                    "</div>" +
+                    "</div>" + "<br>" +
+                    "<p>Dibuat: " + feature.properties.user_created + "</p>" +
+                    "</div>";
+
                 layer.on({
                     click: function(e) {
                         polygon.bindPopup(popupContent);
