@@ -41,7 +41,7 @@
 
                         <div class="mb-3">
                             <label for="geom_point" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geom_point" name="geom_point" rows="3"></textarea>
+                            <textarea class="form-control" id="geom_point" name="geom_point" rows="3" readonly></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -78,7 +78,7 @@
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="name" name="name"
-                                placeholder="Fill the point name">
+                                placeholder="Fill the polyline name">
                         </div>
 
                         <div class="mb-3">
@@ -88,7 +88,7 @@
 
                         <div class="mb-3">
                             <label for="geom_polyline" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geom_polyline" name="geom_polyline" rows="3"></textarea>
+                            <textarea class="form-control" id="geom_polyline" name="geom_polyline" rows="3" readonly></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -125,7 +125,7 @@
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="name" name="name"
-                                placeholder="Fill the point name">
+                                placeholder="Fill the polygon name">
                         </div>
 
                         <div class="mb-3">
@@ -135,7 +135,7 @@
 
                         <div class="mb-3">
                             <label for="geom_polygon" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geom_polygon" name="geom_polygon" rows="3"></textarea>
+                            <textarea class="form-control" id="geom_polygon" name="geom_polygon" rows="3" readonly></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -168,16 +168,42 @@
     <script src="https://unpkg.com/@terraformer/wkt"></script>
 
     <script>
-        var map = L.map('map').setView([-2.5650107, 140.5072403], 13);
+        // Set Map
+        var map = L.map('map').setView([-7.673, 110.622], 12); // Center di Klaten
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        // Basemap
+        var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        var satellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+            maxZoom: 20,
+            subdomains:['mt0','mt1','mt2','mt3'],
+            attribution: 'Google Satellite'
+        });
+
+        osm.addTo(map); // Default basemap
+
+        /*
+         * WMS LAYER FROM GEOSERVER
+         */
+        var wmsAdministrasi = L.tileLayer.wms('http://localhost:8080/geoserver/responsi_klaten/wms', {
+            layers: 'responsi_klaten:ADMINISTRASIDESA_AR_25K',
+            format: 'image/png',
+            transparent: true,
+            opacity: 0.7, // Style transparansi
+            attribution: 'Administrasi Desa Klaten'
+        });
+
+        var wmsJalan = L.tileLayer.wms('http://localhost:8080/geoserver/responsi_klaten/wms', {
+            layers: 'responsi_klaten:JALAN_LN_25K',
+            format: 'image/png',
+            transparent: true,
+            attribution: 'Jalan Klaten'
+        });
 
 
-
-
-        /* Digitize Function ==== ACARA 4 PGWL*/
+        /* Digitize Function */
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -189,9 +215,12 @@
                 rectangle: true,
                 circle: false,
                 marker: true,
-                circlemarker: true
+                circlemarker: false // Diubah ke false agar konsisten dengan form input
             },
-            edit: false
+            edit: {
+                featureGroup: drawnItems, // Edit hanya pada layer hasil digitasi
+                remove: true
+            }
         });
         map.addControl(drawControl);
 
@@ -200,183 +229,150 @@
             var type = e.layerType,
                 layer = e.layer;
 
-            console.log(type);
-
             var drawnJSONObject = layer.toGeoJSON();
             var objectGeometry = Terraformer.geojsonToWKT(drawnJSONObject.geometry);
 
-            console.log(drawnJSONObject);
-            // console.log(objectGeometry);
-
             if (type === 'polyline') {
-                console.log("Create " + type);
                 $('#geom_polyline').val(objectGeometry);
-                //MEMUNCULKAN MODAL POLYLINE
                 $('#createpolylineModal').modal('show');
-
-
             } else if (type === 'polygon' || type === 'rectangle') {
-                console.log("Create " + type);
                 $('#geom_polygon').val(objectGeometry);
-                //MEMUNCULKAN MODAL POLYGON
                 $('#createpolygonModal').modal('show');
-
             } else if (type === 'marker') {
-                console.log("Create " + type);
                 $('#geom_point').val(objectGeometry);
-                //MEMUNCULKAN MODAL MARKER
                 $('#createpointModal').modal('show');
-
-
-            } else {
-                console.log('_undefined_');
             }
+
             drawnItems.addLayer(layer);
         });
 
-        // GeoJSON Points -- PGWEBL ACARA 6
+        // GeoJSON Point from Database
         var point = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
-
                 var routedelete = "{{ route('points.destroy', ':id') }}";
                 routedelete = routedelete.replace(':id', feature.properties.id);
-
                 var routeedit = "{{ route('points.edit', ':id') }}";
                 routeedit = routeedit.replace(':id', feature.properties.id);
 
                 var popupContent =
-                    "Nama: " + feature.properties.name + "<br>" +
-                    "Deskripsi: " + feature.properties.description + "<br>" +
-                    "Dibuat: " + feature.properties.created_at + "<br>" +
+                    "<h5>" + feature.properties.name + "</h5>" +
+                    "<b>Deskripsi:</b> " + feature.properties.description + "<br>" +
                     "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
-                    "' width='300px' alt=''>" + "<br>" +
-
-                    "<div class='row mt-4'>" +
-
-                    "<div class='col-6'>" +
-                    "<a href='" + routeedit +
-                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
-                    "</div>" +
-
-                    "<div class='col-6 text-end'>" +
+                    "' class='img-fluid mt-2' alt='...'>" + "<br>" +
+                    "<hr>" +
+                    "<div class='d-flex justify-content-between'>" +
+                    "<a href='" + routeedit + "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i> Edit</a>" +
                     "<form method='POST' action='" + routedelete + "'>" +
                     '@csrf' + '@method('DELETE')' +
-                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(\"Apakah Anda yakin ingin menghapus data ini?\")'><i class='fa-solid fa-trash'></i> Hapus</button>" +
                     "</form>" +
-                    "</div>" +
-                    "</div>" + "<br>" +
-                    "<p>Dibuat: " + feature.properties.user_created + "</p>";
+                    "</div>";
 
                 layer.on({
                     click: function(e) {
-                        point.bindPopup(popupContent);
+                        layer.bindPopup(popupContent).openPopup();
                     },
                     mouseover: function(e) {
-                        point.bindTooltip(feature.properties.name);
+                        layer.bindTooltip(feature.properties.name).openTooltip();
                     },
                 });
             },
         });
         $.getJSON("{{ route('api.points') }}", function(data) {
             point.addData(data);
-            map.addLayer(point);
         });
 
-        // GeoJSON Polylines -- PGWEBL ACARA 6
+        // GeoJSON Polyline from Database
         var polyline = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
-
                 var routedelete = "{{ route('polylines.destroy', ':id') }}";
                 routedelete = routedelete.replace(':id', feature.properties.id);
-
                 var routeedit = "{{ route('polylines.edit', ':id') }}";
                 routeedit = routeedit.replace(':id', feature.properties.id);
 
-                var popupContent = "Nama: " + feature.properties.name + "<br>" +
-                    "Deskripsi: " + feature.properties.description + "<br>" +
-                    "Panjang: " + feature.properties.length_km.toFixed(2) + "km" + "<br>" +
-                    "Dibuat: " + feature.properties.created_at + "<br>" +
+                var popupContent = "<h5>" + feature.properties.name + "</h5>" +
+                    "<b>Deskripsi:</b> " + feature.properties.description + "<br>" +
+                    "<b>Panjang:</b> " + feature.properties.length_km.toFixed(2) + " km" + "<br>" +
                     "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
-                    "' width='300px' alt=''>" + "<br>" +
-
-                    "<div class='row mt-4'>" +
-
-                    "<div class='col-6'>" +
-                    "<a href='" + routeedit +
-                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
-                    "</div>" +
-
-                    "<div class='col-6 text-end'>" +
+                    "' class='img-fluid mt-2' alt='...'>" + "<br>" +
+                    "<hr>" +
+                    "<div class='d-flex justify-content-between'>" +
+                    "<a href='" + routeedit + "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i> Edit</a>" +
                     "<form method='POST' action='" + routedelete + "'>" +
                     '@csrf' + '@method('DELETE')' +
-                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(\"Apakah Anda yakin ingin menghapus data ini?\")'><i class='fa-solid fa-trash'></i> Hapus</button>" +
                     "</form>" +
-                    "</div>" +
-                    "</div>" + "<br>" +
-                    "<p>Dibuat: " + feature.properties.user_created + "</p>";
+                    "</div>";
 
                 layer.on({
                     click: function(e) {
-                        polyline.bindPopup(popupContent);
+                        layer.bindPopup(popupContent).openPopup();
                     },
                     mouseover: function(e) {
-                        polyline.bindTooltip(feature.properties.name);
+                        layer.bindTooltip(feature.properties.name).openTooltip();
                     },
                 });
             },
         });
         $.getJSON("{{ route('api.polylines') }}", function(data) {
             polyline.addData(data);
-            map.addLayer(polyline);
         });
 
-        // GeoJSON Polygons -- PGWEBL ACARA 6
+        // GeoJSON Polygon from Database
         var polygon = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
-
                 var routedelete = "{{ route('polygons.destroy', ':id') }}";
                 routedelete = routedelete.replace(':id', feature.properties.id);
-
                 var routeedit = "{{ route('polygons.edit', ':id') }}";
                 routeedit = routeedit.replace(':id', feature.properties.id);
 
-                var popupContent = "Nama: " + feature.properties.name + "<br>" +
-                    "Deskripsi: " + feature.properties.description + "<br>" +
-                    "Luas: " + feature.properties.area_hektar.toFixed(2) + "Ha" + "<br>" +
-                    "Dibuat: " + feature.properties.created_at + "<br>" +
+                var popupContent = "<h5>" + feature.properties.name + "</h5>" +
+                    "<b>Deskripsi:</b> " + feature.properties.description + "<br>" +
+                    "<b>Luas:</b> " + feature.properties.area_hektar.toFixed(2) + " Ha" + "<br>" +
                     "<img src='{{ asset('storage/images') }}/" + feature.properties.image +
-                    "' width='300px' alt=''>" + "<br>" +
-
-                    "<div class='row mt-4'>" +
-
-                    "<div class='col-6'>" +
-                    "<a href='" + routeedit +
-                    "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i></a>" +
-                    "</div>" +
-
-                    "<div class='col-6 text-end'>" +
+                    "' class='img-fluid mt-2' alt='...'>" + "<br>" +
+                    "<hr>" +
+                     "<div class='d-flex justify-content-between'>" +
+                    "<a href='" + routeedit + "' class='btn btn-sm btn-warning'><i class='fa-solid fa-pen-to-square'></i> Edit</a>" +
                     "<form method='POST' action='" + routedelete + "'>" +
                     '@csrf' + '@method('DELETE')' +
-                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(Apa iyaaa mau dihapus?)'><i class='fa-solid fa-trash'></i></button>" +
+                    "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(\"Apakah Anda yakin ingin menghapus data ini?\")'><i class='fa-solid fa-trash'></i> Hapus</button>" +
                     "</form>" +
-                    "</div>" +
-                    "</div>" + "<br>" +
-                    "<p>Dibuat: " + feature.properties.user_created + "</p>" +
                     "</div>";
 
                 layer.on({
                     click: function(e) {
-                        polygon.bindPopup(popupContent);
+                        layer.bindPopup(popupContent).openPopup();
                     },
                     mouseover: function(e) {
-                        polygon.bindTooltip(feature.properties.name);
+                        layer.bindTooltip(feature.properties.name).openTooltip();
                     },
                 });
             },
         });
         $.getJSON("{{ route('api.polygons') }}", function(data) {
             polygon.addData(data);
-            map.addLayer(polygon);
         });
+
+
+        /* Layer Control */
+        var baseMaps = {
+            "OpenStreetMap": osm,
+            "Google Satellite": satellite
+        };
+
+        var overlayMaps = {
+            "Administrasi Desa (WMS)": wmsAdministrasi,
+            "Jalan (WMS)": wmsJalan,
+            "Titik (Database)": point,
+            "Garis (Database)": polyline,
+            "Area (Database)": polygon,
+            "Data Digitasiku": drawnItems
+        };
+
+        L.control.layers(baseMaps, overlayMaps, {
+            collapsed: false // Agar kontrol layer tidak terlipat
+        }).addTo(map);
+
     </script>
 @endsection

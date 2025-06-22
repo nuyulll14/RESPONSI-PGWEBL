@@ -53,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($polyline as $p)
+                    @foreach ($polylines as $p)
                     <tr>
                         <td>{{ $p->id }}</td>
                         <td>{{ $p->name }}</td>
