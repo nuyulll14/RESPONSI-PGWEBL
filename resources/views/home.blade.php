@@ -31,8 +31,7 @@
             <div class="md:w-1/2">
                 <!-- Ganti 'src' dengan link ke ilustrasi Anda sendiri -->
                 <!-- Anda bisa mencari ilustrasi gratis bertema kesehatan/komunitas di situs seperti undraw.co atau storyset.com -->
-                <img src="https://cdni.iconscout.com/illustration/premium/thumb/medical-team-5338573-4467554.png" alt="Ilustrasi Tim Kesehatan KARTEN" class="w-full h-auto">
-            </div>
+                <img src="{{ asset('images/ilustrasi-tim-kesehatan.svg') }}" alt="Ilustrasi Tim Kesehatan KARTEN" class="w-full h-auto">            </div>
 
         </div>
     </div>

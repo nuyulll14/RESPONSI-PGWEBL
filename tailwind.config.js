@@ -1,21 +1,28 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
-import forms from '@tailwindcss/forms';
-
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
-        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
-        './storage/framework/views/*.php',
-        './resources/views/**/*.blade.php',
+      "./resources/**/*.blade.php",
+      "./resources/**/*.js",
     ],
-
     theme: {
-        extend: {
-            fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
-            },
+      extend: {
+        fontFamily: {
+          // Tambahkan font yang akan kita gunakan
+          sans: ['Inter', 'sans-serif'],
+          display: ['Poppins', 'sans-serif'],
         },
+        colors: {
+          // Definisikan palet warna custom kita
+          primary: '#F1F5F9', // slate-100
+          secondary: '#1E293B', // slate-800
+          accent: {
+            DEFAULT: '#F59E0B', // amber-500
+            hover: '#D97706'  // amber-600
+          }
+        }
+      },
     },
-
-    plugins: [forms],
-};
+    plugins: [
+      require('@tailwindcss/forms'), // Plugin untuk styling form yang lebih baik
+    ],
+  }
