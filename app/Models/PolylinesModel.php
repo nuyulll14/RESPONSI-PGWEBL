@@ -11,32 +11,14 @@ class PolylinesModel extends Model
 
     protected $guarded = ['id'];
 
-    protected $fillable = [
-        'geom',
-        'name',
-        'description',
-        'image',
-        'user_id',
-    ];
-
-    // Menghasilkan seluruh polylines dalam format GeoJSON
     public function geojson_polylines()
     {
-        $polylines = $this->select(
-            'polylines.id',
-            DB::raw('ST_AsGeoJSON(polylines.geom) as geom'),
-            'polylines.name',
-            'polylines.description',
-            'polylines.image',
-            DB::raw('ST_Length(polylines.geom, true) as length_m'),
-            DB::raw('ST_Length(polylines.geom, true) / 1000 as length_km'),
-            'polylines.created_at',
-            'polylines.updated_at',
-            'polylines.user_id',
-            'users.name as user_created'
-        )
-        ->leftJoin('users', 'polylines.user_id', '=', 'users.id')
-        ->get();
+        $polylines = $this
+            ->select(DB::raw('polylines.id, st_asgeojson(geom) as geom, polylines.name, polylines.description, polylines.image,
+            st_length(geom, true) as length_m, st_length(geom, true)/1000 as length_km,
+            polylines.created_at, polylines.updated_at, polylines.user_id, users.name as user_created'))
+            ->leftjoin('users', 'polylines.user_id', '=', 'users.id')
+            ->get();
 
         $geojson = [
             'type' => 'FeatureCollection',
@@ -51,38 +33,32 @@ class PolylinesModel extends Model
                     'id' => $p->id,
                     'name' => $p->name,
                     'description' => $p->description,
-                    'image' => $p->image,
-                    'length_m' => round((float) $p->length_m, 2),
-                    'length_km' => round((float) $p->length_km, 2),
                     'created_at' => $p->created_at,
                     'updated_at' => $p->updated_at,
+                    'length_m' => $p->length_m,
+                    'length_km' => $p->length_km,
+                    'image' => $p->image,
                     'user_id' => $p->user_id,
-                    'user_created' => $p->user_created,
+                    'user_created' => $p->user_created
+
                 ],
             ];
 
-            $geojson['features'][] = $feature;
-        }
+            array_push($geojson['features'], $feature);
 
+
+        }
         return $geojson;
     }
 
-    // Menghasilkan satu polyline berdasarkan ID dalam format GeoJSON
     public function geojson_polyline($id)
     {
-        $polylines = $this->select(
-            'id',
-            DB::raw('ST_AsGeoJSON(geom) as geom'),
-            'name',
-            'description',
-            'image',
-            DB::raw('ST_Length(geom, true) as length_m'),
-            DB::raw('ST_Length(geom, true)/1000 as length_km'),
-            'created_at',
-            'updated_at'
-        )
-        ->where('id', $id)
-        ->get();
+        $polylines = $this
+            ->select(DB::raw('id, st_asgeojson(geom) as geom, name, description, image,
+            st_length(geom, true) as length_m, st_length(geom, true)/1000 as length_km,
+            created_at, updated_at'))
+            ->where('id', $id)
+            ->get();
 
         $geojson = [
             'type' => 'FeatureCollection',
@@ -97,17 +73,19 @@ class PolylinesModel extends Model
                     'id' => $p->id,
                     'name' => $p->name,
                     'description' => $p->description,
-                    'image' => $p->image,
-                    'length_m' => round((float) $p->length_m, 2),
-                    'length_km' => round((float) $p->length_km, 2),
                     'created_at' => $p->created_at,
                     'updated_at' => $p->updated_at,
+                    'length_m' => $p->length_m,
+                    'length_km' => $p->length_km,
+                    'image' => $p->image,
                 ],
             ];
 
-            $geojson['features'][] = $feature;
-        }
+            array_push($geojson['features'], $feature);
 
+
+        }
         return $geojson;
     }
+
 }

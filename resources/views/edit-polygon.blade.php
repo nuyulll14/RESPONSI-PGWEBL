@@ -17,15 +17,15 @@
 @section('content')
     <div id="map"></div>
 
-    <!-- Modal Edit Point-->
-    <div class="modal fade" id="editPointModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <!-- Modal Edit Polygon-->
+    <div class="modal fade" id="editPolygonModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Point</h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Polygon</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form method="POST" action="{{ route('points.update', $id) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('polygons.update', $id) }}" enctype="multipart/form-data">
                     <div class="modal-body">
                         @csrf
                         @method('PATCH')
@@ -33,7 +33,7 @@
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="name" name="name"
-                                placeholder="example point">
+                                placeholder="example polygon">
                         </div>
 
                         <div class="mb-3">
@@ -42,16 +42,16 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="geom_point" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geom_point" name="geom_point" rows="3"></textarea>
+                            <label for="geom_polygon" class="form-label">Geometry</label>
+                            <textarea class="form-control" id="geom_polygon" name="geom_polygon" rows="3"></textarea>
                         </div>
 
                         <div class="mb-3">
                             <label for="image" class="form-label">Photo</label>
-                            <input type="file" class="form-control" id="image_point" name="image"
-                                onchange="document.getElementById('preview-image-point').src = window.URL.createObjectURL(this.files[0])">
+                            <input type="file" class="form-control" id="image_polygon" name="image"
+                                onchange="document.getElementById('preview-image-polygon').src = window.URL.createObjectURL(this.files[0])">
                         </div>
-                        <img src="" alt="" id="preview-image-point" class="img-thumbnail" width="400">
+                        <img src="" alt="" id="preview-image-polygon" class="img-thumbnail" width="400">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -114,21 +114,21 @@
                 // menampilkan data ke dalam form
                 $('#name').val(properties.name);
                 $('#description').val(properties.description);
-                $('#geom_point').val(objectGeometry);
-                $('#preview-image-point').attr('src', "{{ asset('storage/images') }}/"+ properties.image);
+                $('#geom_polygon').val(objectGeometry);
+                $('#preview-image-polygon').attr('src', "{{ asset('storage/images') }}/"+ properties.image);
 
                 // menampilkan modal edit
-                $('#editPointModal').modal('show');
+                $('#editPolygonModal').modal('show');
             });
         });
     </script>
 
     <script>
-        /* GeoJSON Point */
-        var point = L.geoJson(null, {
+        /* GeoJSON Polygon */
+        var polygon = L.geoJson(null, {
             onEachFeature: function(feature, layer) {
 
-                // memasukkan layer point ke dalam drawnItems
+                // memasukkan layer polygon ke dalam drawnItems
                 drawnItems.addLayer(layer);
 
                 var properties = feature.properties;
@@ -139,21 +139,21 @@
                         // menampilkan data ke dalam form
                         $('#name').val(feature.properties.name);
                         $('#description').val(feature.properties.description);
-                        $('#geom_point').val(objectGeometry);
-                        $('#preview-image-point').attr('src', "{{ asset('storage/images') }}/"+ feature.properties.image);
+                        $('#geom_polygon').val(objectGeometry);
+                        $('#preview-image-polygon').attr('src', "{{ asset('storage/images') }}/"+ feature.properties.image);
 
                         // menampilkan modal edit
-                        $('#editPointModal').modal('show');
+                        $('#editPolygonModal').modal('show');
                     },
 
                 });
 
             },
         });
-        $.getJSON("{{ route('api.point', $id) }}", function(data) {
-            point.addData(data);
-            map.addLayer(point);
-            map.fitBounds(point.getBounds(), {
+        $.getJSON("{{ route('api.polygon', $id) }}", function(data) {
+            polygon.addData(data);
+            map.addLayer(polygon);
+            map.fitBounds(polygon.getBounds(), {
                 padding: [100, 100]
             });
         });

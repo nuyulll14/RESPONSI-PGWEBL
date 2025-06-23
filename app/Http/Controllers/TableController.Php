@@ -20,9 +20,9 @@ class TableController extends Controller
     {
         $data = [
             'title' => 'Table',
-            'points' => $this->points->all(),
-            'polylines' => $this->polylines->all(),
-            'polygons' => $this->polygons->all(),
+        'points' => $this->points->paginate(10, ['*'], 'pointsPage'),
+        'polylines' => $this->polylines->paginate(10, ['*'], 'polylinesPage'),
+        'polygons' => $this->polygons->paginate(10, ['*'], 'polygonsPage'),
         ];
 
         return view('table',$data);

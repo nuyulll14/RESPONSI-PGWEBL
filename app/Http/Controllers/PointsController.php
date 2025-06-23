@@ -2,15 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PointsModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use App\Models\PointsModel;
 
 class PointsController extends Controller
 {
-
-    protected $points;
-
     public function __construct()
     {
         $this->points = new PointsModel();
@@ -20,13 +16,11 @@ class PointsController extends Controller
      */
     public function index()
     {
-        $points = $this->points->all(); // Ambil semua data dari model PointsModel
-
         $data = [
-            'title' => 'Map'
+            'title' => 'Map',
         ];
 
-        return view('map', $data); // Tampilkan view table.blade.php
+        return view('map', $data);
     }
 
     /**
@@ -42,39 +36,34 @@ class PointsController extends Controller
      */
     public function store(Request $request)
     {
-        // validation request
-        $request->validate(
-            [
-                'name' => 'required|unique:points,name',
-                'description' => 'required',
-                'geom_point' => 'required',
-                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:4048',
-            ],
-            [
-                'name.required' => 'Name is required',
-                'name.unique' => 'Name already exists',
 
-                'descriptions.required' => 'Descriptions is required',
-                'geom_point.required' => 'Geometry point is required',
-            ]
-        );
+        // validate data
+        $request->validate([
+            'name' => 'required|unique:points,name',
+            'description' => 'required',
+            'geom_point' => 'required',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:5120'
+        ],
+        [
+            'name.required' => 'Name is required',
+            'name.unique' => 'Name already exists',
+            'description.required' => 'Description is required',
+            'geom_point.required' => 'Geometry is required',
+        ]);
 
-        // Create image directory if not exists
-        if (!is_dir('storage/images')) {
-            mkdir('./storage/images', 0777);
-        }
+    // path direktori tujuan
+    $path = storage_path('app/public/images');
 
-        //Get old image file name
-
-
-
-        // Get image file
+    if (!is_dir($path)) {
+        mkdir($path, 0777, true);
+    }
+        // upload image
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
         } else {
-            $name_image =null;
+            $name_image = null;
         }
 
         $data = [
@@ -82,17 +71,15 @@ class PointsController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'image' => $name_image,
-            'user_id' =>auth()->user()->id,
+            'user_id' => auth()->user()->id
         ];
 
-
-        //Create data
+        // create data
         if (!$this->points->create($data)) {
-            return redirect()->route('map')->with('error', 'point has been added');
+            return redirect()->route('map')->with('error', 'Point failed to add!');
         }
 
-        //Redirect to map
-        return redirect()->route('map')->with('success', 'point has been added');
+        return redirect()->route('map')->with('success', 'Point has been added!');
     }
 
     /**
@@ -110,10 +97,11 @@ class PointsController extends Controller
     {
         $data = [
             'title' => 'Edit Point',
-            'id' => $id
+            'id' => $id,
         ];
 
         return view('edit-point', $data);
+
     }
 
     /**
@@ -121,71 +109,61 @@ class PointsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // dd($id, $request-> all());
-        // validation request
+        // validate data
         $request->validate(
             [
-                'name' => 'required|unique:points,name' . $id,
+                'name' => 'required|unique:points,name,' . $id,
                 'description' => 'required',
                 'geom_point' => 'required',
-                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:4048',
+                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2408',
             ],
             [
                 'name.required' => 'Name is required',
-                'name.unique' => 'Name already exists',
-
-                'descriptions.required' => 'Descriptions is required',
-                'geom_point.required' => 'Geometry point is required',
+                'name.unique' => 'Name already exist',
+                'description.required' => 'Description is required',
+                'geom_point.required' => 'Point is required',
             ]
         );
 
-        // Create image directory if not exists
+        // Create directory if not exist
         if (!is_dir('storage/images')) {
             mkdir('./storage/images', 0777);
         }
+
+
+        // Get old image
         $old_image = $this->points->find($id)->image;
 
-        // Get image file
+        // Get image File
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
             $image->move('storage/images', $name_image);
 
-            // Delete old image file if exists
+            // Delete old image
             if ($old_image != null) {
-                if (file_exists('storage/images/' . $old_image)) {
-                    unlink('storage/images/' . $old_image);
+                if (file_exists('./storage/images/' . $old_image)) {
+                    unlink('./storage/images/' . $old_image);
                 }
             }
         } else {
             $name_image = $old_image;
         }
 
-        // Proses file gambar jika tersedia
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
-            $image->move('storage/images', $name_image);
-        } else {
-            $name_image = null;
-        }
-
-
         $data = [
-            'geom' => $request->geom_point,
             'name' => $request->name,
+            'geom' => $request->geom_point,
             'description' => $request->description,
             'image' => $name_image,
         ];
 
-
-        //Create data
+        // Update data
         if (!$this->points->find($id)->update($data)) {
-            return redirect()->route('map')->with('error', 'point failed to update');
+            return redirect()->route('map')->with('error', 'Point failed to update');
         }
 
-        //Redirect to map
-        return redirect()->route('map')->with('success', 'point has been update');
+        //redirect to map
+        return redirect()->route('map')->with('success', 'Point has been updated');
     }
 
     /**
@@ -193,19 +171,18 @@ class PointsController extends Controller
      */
     public function destroy(string $id)
     {
-        $image = $this->points->find($id)->image;
+        $imagefile = $this->points->find($id)->image;
 
         if (!$this->points->destroy($id)) {
-            return redirect()->route('map')->with('error', 'Point failed to deleted!');
+            return redirect()->route('map')->with('error', 'Point failed to delete!');
         }
-
-        // Delete image file
-        if ($image != null) {
-            if (file_exists('./storage/images/' . $image)) {
-                unlink('./storage/images/' . $image);
+        // delete image
+        if ($imagefile != null) {
+            if (file_exists('./storage/images/' . $imagefile)) {
+                unlink('./storage/images/' . $imagefile);
             }
         }
-        return redirect()->route('map')->with('success', 'Point has been delete!');
+
+        return redirect()->route('map')->with('success', 'Point has been deleted!');
     }
 }
-

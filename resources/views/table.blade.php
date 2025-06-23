@@ -1,64 +1,21 @@
-@extends('layout.template')
+@extends('layouts.template')
 
 @section('title', 'Tabel Data Kesehatan')
 
 @section('styles')
-    {{-- Memuat CSS default DataTables, yang akan kita override --}}
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
-
-    {{-- CSS Kustom untuk Integrasi Penuh DataTables & Tailwind --}}
+    {{-- Styling kustom untuk paginasi Laravel agar sesuai tema --}}
     <style>
-        /* Container utama DataTables */
-        .dt-container {
-            @apply font-sans;
+        .pagination {
+            @apply flex justify-center;
         }
-
-        /* Wrapper baris atas (search & length) dan bawah (info & paging) */
-        .dt-layout-row {
-            @apply flex justify-between items-center py-2;
+        .pagination .page-item .page-link {
+            @apply first:rounded-l-lg last:rounded-r-lg relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 bg-white ring-1 ring-inset ring-slate-300 hover:bg-cyan-50 focus:z-20 focus:outline-offset-0 transition-colors;
         }
-
-        /* Styling dropdown "Show entries" */
-        .dt-length {
-            @apply flex items-center gap-2;
+        .pagination .page-item.active .page-link {
+            @apply z-10 bg-cyan-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 hover:bg-cyan-600;
         }
-        .dt-length select {
-            @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 p-2 pr-8;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.5rem center;
-            background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
-        }
-        .dt-length label {
-             @apply text-sm text-slate-600;
-        }
-
-        /* Styling input pencarian (dibuat lebih spesifik) */
-        .dt-search input {
-            @apply bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 p-2 w-64;
-            /* Padding kiri akan ditambahkan oleh JS untuk ikon */
-        }
-        .dt-search label {
-            display: none; /* Sembunyikan label "Search:" default */
-        }
-
-        /* Styling tombol paginasi */
-        .dt-paging-button {
-            @apply !bg-white !border-slate-300 !text-slate-600 hover:!bg-cyan-50 transition-colors duration-200;
-        }
-        .dt-paging-button.current, .dt-paging-button.current:hover {
-            @apply !bg-cyan-600 !border-cyan-600 !text-white;
-        }
-        .dt-paging-button.disabled {
-            @apply !opacity-50 !cursor-default;
-        }
-
-        /* Info "Showing 1 to X of Y entries" */
-        .dt-info {
-            @apply text-sm text-slate-500;
+        .pagination .page-item.disabled .page-link {
+            @apply text-slate-400 bg-slate-50 cursor-default;
         }
     </style>
 @endsection
@@ -67,7 +24,7 @@
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
 
     <!-- TABEL DATA POINTS -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div id="points-container" class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-6 border-b border-slate-200 flex items-center gap-4">
             <div class="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-lg flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-map-pin text-2xl"></i>
@@ -77,53 +34,78 @@
                 <p class="text-sm text-slate-500">Kumpulan data titik fasilitas kesehatan.</p>
             </div>
         </div>
-        <div class="p-4 sm:p-6">
-            <table id="pointsTable" class="display w-full text-sm">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Image</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Created At</th>
-                        <th class="px-6 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    @foreach ($points as $p)
-                    <tr class="hover:bg-cyan-50/50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-500">{{ $p->id }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap font-semibold text-slate-800">{{ $p->name }}</td>
-                        <td class="px-6 py-4">
-                            @if($p->image)
-                                <img src="{{ asset('storage/images/' . $p->image) }}" alt="Image for {{ $p->name }}" class="h-14 w-20 object-cover rounded-md shadow-sm border border-slate-200">
-                            @else
-                                <span class="text-xs text-slate-400 italic">No Image</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{ $p->created_at->format('d M Y, H:i') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <a href="{{ route('points.edit', $p->id) }}" class="p-2 rounded-full text-yellow-600 bg-yellow-100 hover:bg-yellow-200 transition-colors" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <form action="{{ route('points.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 rounded-full text-red-600 bg-red-100 hover:bg-red-200 transition-colors" title="Delete">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="p-4 sm:p-6 space-y-4">
+            <!-- Search Input -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <input type="text" id="pointsSearch" onkeyup="searchTable('pointsSearch', 'pointsTable')" placeholder="Cari data titik..." class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full md:w-80 p-2.5 pl-10">
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table id="pointsTable" class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-xs text-slate-600 uppercase">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">ID</th>
+                            <th scope="col" class="px-6 py-3">Name</th>
+                            <th scope="col" class="px-6 py-3">Image</th>
+                            <th scope="col" class="px-6 py-3">Created At</th>
+                            <th scope="col" class="px-6 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @forelse ($points as $p)
+                        <tr class="bg-white hover:bg-slate-50 transition-colors duration-200">
+                            <td class="px-6 py-4 font-mono text-slate-500">{{ $p->id }}</td>
+                            <td class="px-6 py-4 font-semibold text-slate-800">{{ $p->name }}</td>
+                            <td class="px-6 py-4">
+                                @if($p->image)
+                                    <img src="{{ asset('storage/images/' . $p->image) }}" alt="Image" class="h-12 w-16 object-cover rounded-md shadow-sm border border-slate-200">
+                                @else
+                                    <span class="text-xs text-slate-400 italic">No Image</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-slate-500">{{ $p->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route('points.edit', $p->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
+                                    </a>
+                                    <form action="{{ route('points.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus data ini?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-800 bg-red-100 rounded-md hover:bg-red-200 transition-colors" title="Delete">
+                                            <i class="fa-solid fa-trash"></i><span>Hapus</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-10 text-slate-500">
+                                <i class="fa-solid fa-circle-xmark text-2xl mb-2"></i>
+                                <p>Tidak ada data ditemukan.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Links -->
+            @if ($points->hasPages())
+                <div class="pt-4">
+                    {{ $points->links() }}
+                </div>
+            @endif
         </div>
     </div>
 
-    <!-- TABEL DATA POLYLINES -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    {{-- Anda bisa duplikasi struktur di atas untuk Polylines dan Polygons --}}
+    {{-- Contoh untuk Polylines --}}
+    <div id="polylines-container" class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-6 border-b border-slate-200 flex items-center gap-4">
             <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-road text-2xl"></i>
@@ -133,53 +115,78 @@
                 <p class="text-sm text-slate-500">Kumpulan data garis seperti jalan atau sungai.</p>
             </div>
         </div>
-        <div class="p-4 sm:p-6">
-            <table id="polylinesTable" class="display w-full text-sm">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Image</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Created At</th>
-                        <th class="px-6 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    @foreach ($polylines as $p)
-                    <tr class="hover:bg-indigo-50/50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-500">{{ $p->id }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap font-semibold text-slate-800">{{ $p->name }}</td>
-                        <td class="px-6 py-4">
-                            @if($p->image)
-                                <img src="{{ asset('storage/images/' . $p->image) }}" alt="Image for {{ $p->name }}" class="h-14 w-20 object-cover rounded-md shadow-sm border border-slate-200">
-                            @else
-                                <span class="text-xs text-slate-400 italic">No Image</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{ $p->created_at->format('d M Y, H:i') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <a href="{{ route('polylines.edit', $p->id) }}" class="p-2 rounded-full text-yellow-600 bg-yellow-100 hover:bg-yellow-200 transition-colors" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <form action="{{ route('polylines.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 rounded-full text-red-600 bg-red-100 hover:bg-red-200 transition-colors" title="Delete">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="p-4 sm:p-6 space-y-4">
+             <!-- Search Input -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <input type="text" id="polylinesSearch" onkeyup="searchTable('polylinesSearch', 'polylinesTable')" placeholder="Cari data garis..." class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full md:w-80 p-2.5 pl-10">
+            </div>
+
+             <!-- Table -->
+            <div class="overflow-x-auto">
+                <table id="polylinesTable" class="w-full text-sm text-left">
+                    {{-- Thead, Tbody, Tfoot ... sama seperti tabel Points --}}
+                    <thead class="bg-slate-50 text-xs text-slate-600 uppercase">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">ID</th>
+                            <th scope="col" class="px-6 py-3">Name</th>
+                            <th scope="col" class="px-6 py-3">Image</th>
+                            <th scope="col" class="px-6 py-3">Created At</th>
+                            <th scope="col" class="px-6 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @forelse ($polylines as $pl)
+                        <tr class="bg-white hover:bg-slate-50 transition-colors duration-200">
+                            <td class="px-6 py-4 font-mono text-slate-500">{{ $pl->id }}</td>
+                            <td class="px-6 py-4 font-semibold text-slate-800">{{ $pl->name }}</td>
+                            <td class="px-6 py-4">
+                                @if($pl->image)
+                                    <img src="{{ asset('storage/images/' . $pl->image) }}" alt="Image" class="h-12 w-16 object-cover rounded-md shadow-sm border border-slate-200">
+                                @else
+                                    <span class="text-xs text-slate-400 italic">No Image</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-slate-500">{{ $pl->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route('polylines.edit', $pl->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
+                                    </a>
+                                    <form action="{{ route('polylines.destroy', $pl->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus data ini?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-800 bg-red-100 rounded-md hover:bg-red-200 transition-colors" title="Delete">
+                                            <i class="fa-solid fa-trash"></i><span>Hapus</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                             <td colspan="5" class="text-center py-10 text-slate-500">
+                                <i class="fa-solid fa-circle-xmark text-2xl mb-2"></i>
+                                <p>Tidak ada data ditemukan.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Links -->
+             @if ($polylines->hasPages())
+                <div class="pt-4">
+                    {{ $polylines->links() }}
+                </div>
+            @endif
         </div>
     </div>
 
-    <!-- TABEL DATA POLYGONS -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+     {{-- Contoh untuk Polygons --}}
+    <div id="polygons-container" class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-6 border-b border-slate-200 flex items-center gap-4">
             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-draw-polygon text-2xl"></i>
@@ -189,82 +196,111 @@
                 <p class="text-sm text-slate-500">Kumpulan data area seperti batas administrasi atau zona.</p>
             </div>
         </div>
-        <div class="p-4 sm:p-6">
-            <table id="polygonsTable" class="display w-full text-sm">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Image</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Created At</th>
-                        <th class="px-6 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    @foreach ($polygons as $p)
-                    <tr class="hover:bg-emerald-50/50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-500">{{ $p->id }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap font-semibold text-slate-800">{{ $p->name }}</td>
-                        <td class="px-6 py-4">
-                             @if($p->image)
-                                <img src="{{ asset('storage/images/' . $p->image) }}" alt="Image for {{ $p->name }}" class="h-14 w-20 object-cover rounded-md shadow-sm border border-slate-200">
-                            @else
-                                <span class="text-xs text-slate-400 italic">No Image</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{ $p->created_at->format('d M Y, H:i') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <a href="{{ route('polygons.edit', $p->id) }}" class="p-2 rounded-full text-yellow-600 bg-yellow-100 hover:bg-yellow-200 transition-colors" title="Edit">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <form action="{{ route('polygons.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 rounded-full text-red-600 bg-red-100 hover:bg-red-200 transition-colors" title="Delete">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="p-4 sm:p-6 space-y-4">
+             <!-- Search Input -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <input type="text" id="polygonsSearch" onkeyup="searchTable('polygonsSearch', 'polygonsTable')" placeholder="Cari data area..." class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full md:w-80 p-2.5 pl-10">
+            </div>
+
+             <!-- Table -->
+            <div class="overflow-x-auto">
+                <table id="polygonsTable" class="w-full text-sm text-left">
+                    {{-- Thead, Tbody, Tfoot ... sama seperti tabel Points --}}
+                     <thead class="bg-slate-50 text-xs text-slate-600 uppercase">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">ID</th>
+                            <th scope="col" class="px-6 py-3">Name</th>
+                            <th scope="col" class="px-6 py-3">Image</th>
+                            <th scope="col" class="px-6 py-3">Created At</th>
+                            <th scope="col" class="px-6 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @forelse ($polygons as $pg)
+                        <tr class="bg-white hover:bg-slate-50 transition-colors duration-200">
+                            <td class="px-6 py-4 font-mono text-slate-500">{{ $pg->id }}</td>
+                            <td class="px-6 py-4 font-semibold text-slate-800">{{ $pg->name }}</td>
+                            <td class="px-6 py-4">
+                                @if($pg->image)
+                                    <img src="{{ asset('storage/images/' . $pg->image) }}" alt="Image" class="h-12 w-16 object-cover rounded-md shadow-sm border border-slate-200">
+                                @else
+                                    <span class="text-xs text-slate-400 italic">No Image</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-slate-500">{{ $pg->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route('polygons.edit', $pg->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
+                                    </a>
+                                    <form action="{{ route('polygons.destroy', $pg->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus data ini?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-800 bg-red-100 rounded-md hover:bg-red-200 transition-colors" title="Delete">
+                                            <i class="fa-solid fa-trash"></i><span>Hapus</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                         @empty
+                        <tr>
+                             <td colspan="5" class="text-center py-10 text-slate-500">
+                                <i class="fa-solid fa-circle-xmark text-2xl mb-2"></i>
+                                <p>Tidak ada data ditemukan.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Links -->
+            @if ($polygons->hasPages())
+                <div class="pt-4">
+                    {{ $polygons->links() }}
+                </div>
+            @endif
         </div>
     </div>
+
 </div>
 @endsection
 
 @section('scripts')
-{{-- Memuat jQuery dan DataTables JS --}}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Opsi language untuk mengganti label default dan menambahkan placeholder
-        const dataTableOptions = {
-            language: {
-                search: "", // Kosongkan label default
-                searchPlaceholder: "Search records..." // Tambahkan placeholder
+    function searchTable(inputId, tableId) {
+        // Deklarasi variabel
+        let input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById(inputId);
+        filter = input.value.toUpperCase();
+        table = document.getElementById(tableId);
+        tr = table.getElementsByTagName("tr");
+
+        // Loop melalui semua baris tabel, dan sembunyikan yang tidak cocok dengan pencarian
+        for (i = 0; i < tr.length; i++) {
+            // Kita akan cari di semua sel (td) pada baris tersebut
+            let found = false;
+            td = tr[i].getElementsByTagName("td");
+            if (td.length > 0) { // Pastikan ini adalah baris data, bukan header
+                 for (let j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            found = true;
+                            break; // Hentikan pencarian jika sudah ditemukan di salah satu sel
+                        }
+                    }
+                }
+                if(found){
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
             }
-        };
-
-        // Inisialisasi setiap tabel dengan DataTables
-        $('#pointsTable').DataTable(dataTableOptions);
-        $('#polylinesTable').DataTable(dataTableOptions);
-        $('#polygonsTable').DataTable(dataTableOptions);
-
-        // --- SCRIPT UNTUK MENAMBAHKAN IKON SEARCH SECARA DINAMIS ---
-        // Ini adalah cara yang paling andal untuk memastikan ikon selalu muncul.
-        $('.dt-search input').each(function() {
-            // Bungkus input dalam div relative
-            $(this).wrap('<div class="relative"></div>');
-            // Tambahkan ikon di dalam wrapper, sebelum input
-            $(this).before('<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none"><i class="fa-solid fa-magnifying-glass"></i></span>');
-            // Tambahkan padding kiri ke input agar teks tidak tumpang tindih dengan ikon
-            $(this).addClass('pl-10');
-        });
-    });
+        }
+    }
 </script>
 @endsection
